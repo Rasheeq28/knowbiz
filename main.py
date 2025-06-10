@@ -15,7 +15,7 @@ def main():
         business_description = st.text_area("Small Description of Your Business:")
 
         # File Uploader for Picture
-        uploaded_picture = st.file_uploader("Upload a Picture (JPG or PNG):", type=["jpg", "png"])
+        uploaded_picture = st.file_uploader("Upload a Picture of you or your Business (JPG or PNG):", type=["jpg", "png"])
 
         # Submit Button
         submit_button = st.form_submit_button("Submit Information")
