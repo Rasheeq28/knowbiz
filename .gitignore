@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.env
+.idea/ # PyCharm project files
+.vscode/ # VS Code project files
+data/ # If you have any local data files you don't want to upload
+.streamlit/ # Streamlit's local config folder, usually not needed on Git
