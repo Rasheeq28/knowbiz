@@ -304,27 +304,26 @@ if submitted:
     profile_url = None
 
     # Step 1: Upload profile picture (if provided)
-    profile_url = None
+    try:
+        file_extension = profile_pic.name.split(".")[-1]
+        unique_filename = f"{str(uuid.uuid4())}.{file_extension}"
+        storage_path = f"owner_profiles/{unique_filename}"
+        file_bytes = profile_pic.read()
 
-    if profile_pic:
-        try:
-            file_extension = profile_pic.name.split(".")[-1]
-            unique_filename = f"{str(uuid.uuid4())}.{file_extension}"
-            storage_path = f"owner_profiles/{unique_filename}"
-            file_bytes = profile_pic.read()
+        upload_response = supabase.storage.from_("picbucket").upload(
+            path=storage_path,
+            file=file_bytes,
+            file_options={"content-type": profile_pic.type}
+        )
 
-            upload_response = supabase.storage.from_("picbucket").upload(
-                path=storage_path,
-                file=file_bytes,
-                file_options={"content-type": profile_pic.type}
-            )
+        if upload_response.status_code == 200:
+            profile_url = supabase.storage.from_("picbucket").get_public_url(storage_path)
+        else:
+            st.warning(
+                f"⚠️ Image upload failed with status code {upload_response.status_code}. Response: {upload_response.text}")
 
-            if upload_response.data is not None:
-                profile_url = supabase.storage.from_("picbucket").get_public_url(storage_path)
-            else:
-                st.warning("⚠️ Image upload failed. It might be due to permissions or invalid file.")
-        except Exception as e:
-            st.error(f"❌ Upload error: {e}")
+    except Exception as e:
+        st.error(f"❌ Upload error: {e}")
 
     # Step 2: Insert form data into Supabase table
     try:
