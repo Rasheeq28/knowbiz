@@ -1,14 +1,31 @@
-# Python
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 .Python
+
+# Virtual environments
 env/
 venv/
+
+# Environment/config files (never commit your secrets!)
+.env
 *.env
-.idea/ # PyCharm project files
-.vscode/ # VS Code project files
-data/ # If you have any local data files you don't want to upload
-.streamlit/ # Streamlit's local config folder, usually not needed on Git
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE files
+.idea/
+.vscode/
+
+# Local data or databases (optional)
+data/
 *.db
+*.sqlite
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
