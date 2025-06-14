@@ -95,9 +95,10 @@ if submitted:
         "profile_pic": profile_url  # can be None if not uploaded
     }
 
+
     insert_res = supabase.table("owner_table").insert(data).execute()
 
-    if insert_res.status_code == 201:
+    if insert_res.data is not None:
         st.success("✅ Form submitted and saved to Supabase!")
         st.write("### Submitted Info:")
         st.write("**Owner Name:**", owner_name or "Not provided")
