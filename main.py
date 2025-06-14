@@ -80,7 +80,8 @@ if submitted:
         storage_path = f"owner_profiles/{unique_name}"
 
         # Upload image to storage bucket (public)
-        res = supabase.storage().from_("public").upload(storage_path, profile_pic.getvalue(), {"content-type": profile_pic.type})
+        res = supabase.storage().from_("public").upload(storage_path, profile_pic.read(), {"content-type": profile_pic.type})
+
         if res.status_code == 200:
             # Get the public URL
             profile_url = supabase.storage().from_("public").get_public_url(storage_path)
