@@ -304,6 +304,8 @@ if submitted:
     profile_url = None
 
     # Step 1: Upload profile picture (if provided)
+    profile_url = None
+
     if profile_pic:
         try:
             file_extension = profile_pic.name.split(".")[-1]
@@ -311,20 +313,18 @@ if submitted:
             storage_path = f"owner_profiles/{unique_filename}"
             file_bytes = profile_pic.read()
 
-            # Upload image to Supabase Storage (bucket: picbucket)
             upload_response = supabase.storage.from_("picbucket").upload(
                 path=storage_path,
                 file=file_bytes,
                 file_options={"content-type": profile_pic.type}
             )
 
-            if upload_response.error:
-                st.warning(f"⚠️ Error uploading image: {upload_response.error.message}")
-            else:
+            if upload_response.data is not None:
                 profile_url = supabase.storage.from_("picbucket").get_public_url(storage_path)
-
+            else:
+                st.warning("⚠️ Image upload failed. It might be due to permissions or invalid file.")
         except Exception as e:
-            st.warning(f"⚠️ Error uploading image: {e}")
+            st.error(f"❌ Upload error: {e}")
 
     # Step 2: Insert form data into Supabase table
     try:
