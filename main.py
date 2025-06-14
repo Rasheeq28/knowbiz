@@ -224,25 +224,23 @@ if submitted:
 
     # Step 1: Upload profile pic to 'picbucket'
     if profile_pic:
-        try:
-            file_bytes = profile_pic.read()
-            file_extension = profile_pic.name.split(".")[-1]
-            unique_name = f"{str(uuid.uuid4())}.{file_extension}"
-            storage_path = f"owner_profiles/{unique_name}"
+        file_extension = profile_pic.name.split(".")[-1]
+        unique_name = f"{str(uuid.uuid4())}.{file_extension}"
+        storage_path = f"owner_profiles/{unique_name}"
 
+        try:
             # Upload to 'picbucket'
             res = supabase.storage.from_("picbucket").upload(
                 storage_path,
-                file_bytes,
+                profile_pic.read(),
                 {"content-type": profile_pic.type}
             )
 
-            if res.get("error") is None:
-                public_url_data = supabase.storage.from_("picbucket").get_public_url(storage_path)
-                profile_url = public_url_data.public_url
+            if res.error:
+                st.warning(f"⚠️ Error uploading image: {res.error}")
             else:
-                st.warning("⚠️ Failed to upload image to Supabase Storage.")
-
+                # Get public URL
+                profile_url = supabase.storage.from_("picbucket").get_public_url(storage_path)
         except Exception as e:
             st.warning(f"⚠️ Error uploading image: {e}")
 
