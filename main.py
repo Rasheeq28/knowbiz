@@ -414,8 +414,7 @@ if submitted:
     try:
         insert_response = supabase.table("owner_table").insert(data).execute()
 
-        # Check if insert_response.status_code exists and equals 201 (Created)
-        if hasattr(insert_response, "status_code") and insert_response.status_code == 201:
+        if insert_response.data and len(insert_response.data) > 0:
             st.success("✅ Form submitted and saved to Supabase!")
             st.write("### Submitted Info:")
             st.write("**Owner Name:**", owner_name or "Not provided")
@@ -426,8 +425,8 @@ if submitted:
             else:
                 st.write("No profile picture uploaded.")
         else:
-            # If status_code not 201, try printing error info
             st.error(f"❌ Insert failed. Response: {insert_response}")
+
     except Exception as e:
         st.error(f"❌ Error inserting data: {e}")
 
