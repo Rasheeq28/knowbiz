@@ -236,11 +236,10 @@ if submitted:
                 {"content-type": profile_pic.type}
             )
 
-            if res.error:
-                st.warning(f"⚠️ Error uploading image: {res.error}")
-            else:
-                # Get public URL
+            if res.status_code == 200:
                 profile_url = supabase.storage.from_("picbucket").get_public_url(storage_path)
+            else:
+                st.warning(f"⚠️ Error uploading image: {res.data}")
         except Exception as e:
             st.warning(f"⚠️ Error uploading image: {e}")
 
