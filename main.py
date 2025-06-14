@@ -155,7 +155,8 @@ if submitted:
             storage_path = f"owner_profiles/{unique_name}"
 
             # Upload to Supabase storage bucket named "public"
-            res = supabase.storage().from_("public").upload(storage_path, file_like, {"content-type": profile_pic.type})
+            res = supabase.storage.from_("public").upload(storage_path, file_like, {"content-type": profile_pic.type})
+
 
             # Check upload result
             if hasattr(res, "status_code") and res.status_code == 200:
