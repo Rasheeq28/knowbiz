@@ -37,6 +37,6 @@ if submitted:
     st.write("**Instagram Link:**", insta_link or "Not provided")
 
     if profile_pic:
-        st.image(profile_pic, caption="Uploaded Profile Picture", use_column_width=True)
+        st.image(profile_pic, caption="Uploaded Profile Picture", use_container_width=True)
     else:
         st.write("No profile picture uploaded.")
