@@ -379,34 +379,32 @@ with st.form("business_form"):
 
 if submitted:
     profile_url = None
+
     if profile_pic:
         file_extension = profile_pic.name.split(".")[-1]
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
         storage_path = f"owner_profiles/{unique_filename}"
 
         try:
-            # Read bytes from UploadedFile
             file_bytes = profile_pic.read()
 
-            # Upload file bytes to Supabase Storage bucket
             upload_response = supabase.storage.from_(BUCKET_NAME).upload(
                 path=storage_path,
                 file=file_bytes,
                 file_options={"content-type": profile_pic.type},
             )
 
-            # Check for upload errors
-            if upload_response.error:
-                st.error(f"⚠️ Upload error: {upload_response.error.message}")
+            # Check upload response status code (200 is success)
+            if upload_response.status_code != 200:
+                err_msg = upload_response.data.get("message", "Unknown upload error")
+                st.error(f"⚠️ Upload error: {err_msg}")
             else:
-                # Get public URL of uploaded file
                 profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path).public_url
                 st.success("Profile picture uploaded successfully!")
 
         except Exception as e:
             st.error(f"⚠️ Error uploading image: {e}")
 
-    # Insert the form data and profile pic URL into Supabase table
     data = {
         "owner_name": owner_name,
         "owner_email": owner_email,
@@ -416,8 +414,10 @@ if submitted:
 
     insert_response = supabase.table("owner_table").insert(data).execute()
 
-    if insert_response.error:
-        st.error(f"❌ Insert error: {insert_response.error.message}")
+    # Check insert response status code (201 is success)
+    if insert_response.status_code != 201:
+        err_msg = insert_response.data.get("message", "Unknown insert error")
+        st.error(f"❌ Insert error: {err_msg}")
     else:
         st.success("✅ Form submitted and saved to Supabase!")
         st.write("### Submitted Info:")
