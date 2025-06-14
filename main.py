@@ -324,6 +324,14 @@ if submitted:
 
     except Exception as e:
         st.error(f"❌ Upload error: {e}")
+    upload_response = supabase.storage.from_("picbucket").upload(
+        path=storage_path,
+        file=file_bytes,
+        file_options={"content-type": profile_pic.type}
+    )
+
+    st.write("Upload response object:", upload_response)
+    st.write("Upload response dir:", dir(upload_response))
 
     # Step 2: Insert form data into Supabase table
     try:
