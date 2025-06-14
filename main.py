@@ -43,20 +43,90 @@
 
 
 # supabase integration
+# import streamlit as st
+# from supabase import create_client, Client
+# import time
+# import uuid
+#
+# # Supabase credentials
+# SUPABASE_URL = "https://udarzmjsmaojceashsld.supabase.co"
+# SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkYXJ6bWpzbWFvamNlYXNoc2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0NzA3MjUsImV4cCI6MjA2NTA0NjcyNX0.d4P1KNfglej-JhvzeFEUYqvfjtwYErsZPzOfMG0pdjI"
+#
+# # Supabase init
+# supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+#
+# st.set_page_config(page_title="Business Owner Form", page_icon="🔥")
+#
+# st.title("📋 Student Business Owner Submission Form")
+#
+# # Form
+# with st.form("business_form"):
+#     st.subheader("👤 Owner Information")
+#     owner_name = st.text_input("Your Name")
+#     owner_email = st.text_input("Your Email")
+#     university = st.text_input("University")
+#
+#     profile_pic = st.file_uploader("Upload a Profile Picture (JPG/PNG)", type=["jpg", "jpeg", "png"])
+#
+#     submitted = st.form_submit_button("🚀 Submit")
+#
+# # Submit logic
+# if submitted:
+#     # Step 1: Upload profile pic (if exists)
+#     profile_url = None
+#     if profile_pic:
+#         file_extension = profile_pic.name.split(".")[-1]
+#         unique_name = f"{str(uuid.uuid4())}.{file_extension}"
+#         storage_path = f"owner_profiles/{unique_name}"
+#
+#         # Upload image to storage bucket (public)
+#         res = supabase.storage().from_("public").upload(storage_path, profile_pic.read(), {"content-type": profile_pic.type})
+#
+#         if res.status_code == 200:
+#             # Get the public URL
+#             profile_url = supabase.storage().from_("public").get_public_url(storage_path)
+#         else:
+#             st.warning("⚠️ Failed to upload image.")
+#
+#     # Step 2: Insert into Supabase table
+#     data = {
+#         "owner_name": owner_name,
+#         "owner_email": owner_email,
+#         "university": university,
+#         "profile_pic": profile_url  # can be None if not uploaded
+#     }
+#
+#
+#     insert_res = supabase.table("owner_table").insert(data).execute()
+#
+#     if insert_res.data is not None:
+#         st.success("✅ Form submitted and saved to Supabase!")
+#         st.write("### Submitted Info:")
+#         st.write("**Owner Name:**", owner_name or "Not provided")
+#         st.write("**Email:**", owner_email or "Not provided")
+#         st.write("**University:**", university or "Not provided")
+#         if profile_url:
+#             st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
+#         else:
+#             st.write("No profile picture uploaded.")
+#     else:
+#         st.error("❌ Failed to submit data to Supabase.")
+
+
+# profile pic fixing
 import streamlit as st
 from supabase import create_client, Client
-import time
 import uuid
+import io
 
 # Supabase credentials
 SUPABASE_URL = "https://udarzmjsmaojceashsld.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkYXJ6bWpzbWFvamNlYXNoc2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0NzA3MjUsImV4cCI6MjA2NTA0NjcyNX0.d4P1KNfglej-JhvzeFEUYqvfjtwYErsZPzOfMG0pdjI"
 
-# Supabase init
+# Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.set_page_config(page_title="Business Owner Form", page_icon="🔥")
-
 st.title("📋 Student Business Owner Submission Form")
 
 # Form
@@ -70,44 +140,53 @@ with st.form("business_form"):
 
     submitted = st.form_submit_button("🚀 Submit")
 
-# Submit logic
 if submitted:
-    # Step 1: Upload profile pic (if exists)
     profile_url = None
     if profile_pic:
-        file_extension = profile_pic.name.split(".")[-1]
-        unique_name = f"{str(uuid.uuid4())}.{file_extension}"
-        storage_path = f"owner_profiles/{unique_name}"
+        try:
+            # Prepare file bytes and reset pointer
+            file_bytes = profile_pic.read()
+            profile_pic.seek(0)
+            file_like = io.BytesIO(file_bytes)
 
-        # Upload image to storage bucket (public)
-        res = supabase.storage().from_("public").upload(storage_path, profile_pic.read(), {"content-type": profile_pic.type})
+            # Generate unique file name and storage path
+            file_extension = profile_pic.name.split(".")[-1]
+            unique_name = f"{str(uuid.uuid4())}.{file_extension}"
+            storage_path = f"owner_profiles/{unique_name}"
 
-        if res.status_code == 200:
-            # Get the public URL
-            profile_url = supabase.storage().from_("public").get_public_url(storage_path)
-        else:
-            st.warning("⚠️ Failed to upload image.")
+            # Upload to Supabase storage bucket named "public"
+            res = supabase.storage().from_("public").upload(storage_path, file_like, {"content-type": profile_pic.type})
 
-    # Step 2: Insert into Supabase table
+            # Check upload result
+            if hasattr(res, "status_code") and res.status_code == 200:
+                profile_url = supabase.storage().from_("public").get_public_url(storage_path).public_url
+            else:
+                st.warning("⚠️ Failed to upload image. Please try again.")
+        except Exception as e:
+            st.error(f"⚠️ Error uploading image: {e}")
+
+    # Prepare data to insert
     data = {
-        "owner_name": owner_name,
-        "owner_email": owner_email,
-        "university": university,
-        "profile_pic": profile_url  # can be None if not uploaded
+        "owner_name": owner_name or None,
+        "owner_email": owner_email or None,
+        "university": university or None,
+        "profile_pic": profile_url  # can be None if no upload
     }
 
-
-    insert_res = supabase.table("owner_table").insert(data).execute()
-
-    if insert_res.data is not None:
-        st.success("✅ Form submitted and saved to Supabase!")
-        st.write("### Submitted Info:")
-        st.write("**Owner Name:**", owner_name or "Not provided")
-        st.write("**Email:**", owner_email or "Not provided")
-        st.write("**University:**", university or "Not provided")
-        if profile_url:
-            st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
+    try:
+        insert_res = supabase.table("owner_table").insert(data).execute()
+        if insert_res.data is not None:
+            st.success("✅ Form submitted and saved to Supabase!")
+            st.write("### Submitted Info:")
+            st.write("**Owner Name:**", owner_name or "Not provided")
+            st.write("**Email:**", owner_email or "Not provided")
+            st.write("**University:**", university or "Not provided")
+            if profile_url:
+                st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
+            else:
+                st.write("No profile picture uploaded.")
         else:
-            st.write("No profile picture uploaded.")
-    else:
-        st.error("❌ Failed to submit data to Supabase.")
+            st.error("❌ Failed to submit data to Supabase.")
+            st.write(insert_res)
+    except Exception as e:
+        st.error(f"❌ Error saving data: {e}")
