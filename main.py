@@ -359,65 +359,72 @@ import streamlit as st
 from supabase import create_client
 import uuid
 
-# Load secrets from .streamlit/secrets.toml
+# Supabase credentials
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
 BUCKET_NAME = st.secrets["supabase"]["bucket"]
 
-# Initialize Supabase client
+# Initialize supabase client
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.title("📋 Student Business Owner Submission Form")
 
-# Form
 with st.form("business_form"):
-    st.subheader("👤 Owner Information")
     owner_name = st.text_input("Your Name")
     owner_email = st.text_input("Your Email")
     university = st.text_input("University")
-
     profile_pic = st.file_uploader("Upload a Profile Picture (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
     submitted = st.form_submit_button("🚀 Submit")
 
-# Handle submission
 if submitted:
     profile_url = None
-
     if profile_pic:
-        # Step 1: Generate unique file path
-        file_ext = profile_pic.name.split('.')[-1]
-        unique_filename = f"{uuid.uuid4()}.{file_ext}"
+        file_extension = profile_pic.name.split(".")[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
         storage_path = f"owner_profiles/{unique_filename}"
 
-        # Step 2: Upload file to Supabase Storage
         try:
+            # Read bytes from UploadedFile
+            file_bytes = profile_pic.read()
+
+            # Upload file bytes to Supabase Storage bucket
             upload_response = supabase.storage.from_(BUCKET_NAME).upload(
                 path=storage_path,
-                file=profile_pic,  # pass file-like object directly
-                file_options={"content-type": profile_pic.type}
+                file=file_bytes,
+                file_options={"content-type": profile_pic.type},
             )
 
-            # Step 3: Get public URL
-            profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
-        except Exception as e:
-            st.error(f"❌ Upload error: {e}")
-            profile_url = None
+            # Check for upload errors
+            if upload_response.error:
+                st.error(f"⚠️ Upload error: {upload_response.error.message}")
+            else:
+                # Get public URL of uploaded file
+                profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path).public_url
+                st.success("Profile picture uploaded successfully!")
 
-    # Step 4: Insert into Supabase table
+        except Exception as e:
+            st.error(f"⚠️ Error uploading image: {e}")
+
+    # Insert the form data and profile pic URL into Supabase table
     data = {
         "owner_name": owner_name,
         "owner_email": owner_email,
         "university": university,
-        "profile_pic": profile_url or "",  # fallback to empty string
+        "profile_pic": profile_url,  # can be None
     }
 
-    try:
-        insert_response = supabase.table("owner_table").insert(data).execute()
-        st.success("✅ Submitted successfully!")
+    insert_response = supabase.table("owner_table").insert(data).execute()
+
+    if insert_response.error:
+        st.error(f"❌ Insert error: {insert_response.error.message}")
+    else:
+        st.success("✅ Form submitted and saved to Supabase!")
+        st.write("### Submitted Info:")
+        st.write("**Owner Name:**", owner_name or "Not provided")
+        st.write("**Email:**", owner_email or "Not provided")
+        st.write("**University:**", university or "Not provided")
         if profile_url:
             st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
         else:
-            st.info("No profile picture uploaded.")
-    except Exception as e:
-        st.error(f"❌ Failed to insert into Supabase: {e}")
+            st.write("No profile picture uploaded.")
