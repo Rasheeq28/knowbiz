@@ -394,13 +394,11 @@ if submitted:
                 file_options={"content-type": profile_pic.type},
             )
 
-            # Check upload response status code (200 is success)
-            if upload_response.status_code != 200:
-                err_msg = upload_response.data.get("message", "Unknown upload error")
-                st.error(f"⚠️ Upload error: {err_msg}")
-            else:
-                profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path).public_url
-                st.success("Profile picture uploaded successfully!")
+            # upload_response is an UploadResponse object
+            # It does NOT have status_code or error attribute
+            # Instead, if no exception raised, upload succeeded
+            st.success("Profile picture uploaded successfully!")
+            profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path).public_url
 
         except Exception as e:
             st.error(f"⚠️ Error uploading image: {e}")
@@ -412,19 +410,20 @@ if submitted:
         "profile_pic": profile_url,  # can be None
     }
 
-    insert_response = supabase.table("owner_table").insert(data).execute()
-
-    # Check insert response status code (201 is success)
-    if insert_response.status_code != 201:
-        err_msg = insert_response.data.get("message", "Unknown insert error")
-        st.error(f"❌ Insert error: {err_msg}")
-    else:
-        st.success("✅ Form submitted and saved to Supabase!")
-        st.write("### Submitted Info:")
-        st.write("**Owner Name:**", owner_name or "Not provided")
-        st.write("**Email:**", owner_email or "Not provided")
-        st.write("**University:**", university or "Not provided")
-        if profile_url:
-            st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
+    try:
+        insert_response = supabase.table("owner_table").insert(data).execute()
+        # insert_response is a dict-like object containing data or error
+        if insert_response.get("error"):
+            st.error(f"❌ Insert error: {insert_response['error']['message']}")
         else:
-            st.write("No profile picture uploaded.")
+            st.success("✅ Form submitted and saved to Supabase!")
+            st.write("### Submitted Info:")
+            st.write("**Owner Name:**", owner_name or "Not provided")
+            st.write("**Email:**", owner_email or "Not provided")
+            st.write("**University:**", university or "Not provided")
+            if profile_url:
+                st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
+            else:
+                st.write("No profile picture uploaded.")
+    except Exception as e:
+        st.error(f"❌ Error inserting data: {e}")
