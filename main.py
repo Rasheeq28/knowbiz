@@ -394,11 +394,12 @@ if submitted:
                 file_options={"content-type": profile_pic.type},
             )
 
-            # upload_response is an UploadResponse object
-            # It does NOT have status_code or error attribute
-            # Instead, if no exception raised, upload succeeded
+            # upload_response is just a response object, no .error or .status_code
+            # If no exception, assume success
             st.success("Profile picture uploaded successfully!")
-            profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path).public_url
+
+            # get_public_url returns a string URL
+            profile_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
 
         except Exception as e:
             st.error(f"⚠️ Error uploading image: {e}")
@@ -412,9 +413,10 @@ if submitted:
 
     try:
         insert_response = supabase.table("owner_table").insert(data).execute()
-        # insert_response is a dict-like object containing data or error
-        if insert_response.get("error"):
-            st.error(f"❌ Insert error: {insert_response['error']['message']}")
+
+        # insert_response is an APIResponse object, has attributes: data, error, status_code
+        if insert_response.error:
+            st.error(f"❌ Insert error: {insert_response.error.message}")
         else:
             st.success("✅ Form submitted and saved to Supabase!")
             st.write("### Submitted Info:")
