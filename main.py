@@ -656,11 +656,10 @@ def upload_to_supabase(file, folder):
         return None
 
 if submitted:
-    # Upload images
     profile_url = upload_to_supabase(profile_pic, "owner_profiles") if profile_pic else None
     logo_url = upload_to_supabase(business_logo, "business_logos") if business_logo else None
 
-    # Insert owner into owner_table
+    # Insert only owner-related data
     owner_data = {
         "owner_name": owner_name,
         "owner_email": owner_email,
@@ -674,7 +673,7 @@ if submitted:
         if owner_insert.data and len(owner_insert.data) > 0:
             owner_id = owner_insert.data[0]["id"]
 
-            # Insert business info into business_table with owner_id
+            # Insert business data using the correct owner_id
             business_data = {
                 "owner_id": owner_id,
                 "business_name": business_name,
