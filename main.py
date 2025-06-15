@@ -433,6 +433,90 @@
 
 
 # busjness form included
+# import streamlit as st
+# from supabase import create_client
+# import uuid
+#
+# # Supabase credentials
+# SUPABASE_URL = st.secrets["supabase"]["url"]
+# SUPABASE_KEY = st.secrets["supabase"]["key"]
+# BUCKET_NAME = st.secrets["supabase"]["bucket"]
+#
+# # Initialize supabase client
+# supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+#
+# st.title("📋 Student Business Owner Submission Form")
+#
+# with st.form("business_form"):
+#     st.subheader("👤 Owner Information")
+#     owner_name = st.text_input("Your Name")
+#     owner_email = st.text_input("Your Email")
+#     university = st.text_input("University")
+#     profile_pic = st.file_uploader("Upload a Profile Picture (JPG/PNG)", type=["jpg", "jpeg", "png"])
+#
+#     st.subheader("🏢 Business Information")
+#     business_name = st.text_input("Business Name")
+#     business_description = st.text_area("Business Description")
+#     business_logo = st.file_uploader("Upload a Business Logo/Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
+#     facebook_url = st.text_input("Facebook URL (optional)")
+#     instagram_url = st.text_input("Instagram URL (optional)")
+#     website_url = st.text_input("Website URL (optional)")
+#
+#     submitted = st.form_submit_button("🚀 Submit")
+#
+# def upload_to_supabase(file, folder):
+#     try:
+#         file_extension = file.name.split(".")[-1]
+#         unique_filename = f"{uuid.uuid4()}.{file_extension}"
+#         storage_path = f"{folder}/{unique_filename}"
+#         file_bytes = file.read()
+#
+#         supabase.storage.from_(BUCKET_NAME).upload(
+#             path=storage_path,
+#             file=file_bytes,
+#             file_options={"content-type": file.type},
+#         )
+#         return supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+#     except Exception as e:
+#         st.error(f"⚠️ Error uploading image: {e}")
+#         return None
+#
+# if submitted:
+#     profile_url = upload_to_supabase(profile_pic, "owner_profiles") if profile_pic else None
+#     logo_url = upload_to_supabase(business_logo, "business_logos") if business_logo else None
+#
+#     data = {
+#         "owner_name": owner_name,
+#         "owner_email": owner_email,
+#         "university": university,
+#         "profile_pic": profile_url,
+#         "business_name": business_name,
+#         "business_description": business_description,
+#         "business_logo": logo_url,
+#         "facebook_url": facebook_url,
+#         "instagram_url": instagram_url,
+#         "website_url": website_url,
+#     }
+#
+#     try:
+#         insert_response = supabase.table("owner_table").insert(data).execute()
+#         if insert_response.data and len(insert_response.data) > 0:
+#             st.success("✅ Form submitted and saved to Supabase!")
+#             st.write("### Submitted Info:")
+#             st.write("**Owner Name:**", owner_name or "Not provided")
+#             st.write("**University:**", university or "Not provided")
+#             st.write("**Business Name:**", business_name or "Not provided")
+#             st.write("**Business Description:**", business_description or "Not provided")
+#             if profile_url:
+#                 st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
+#             if logo_url:
+#                 st.image(logo_url, caption="Business Logo", use_container_width=True)
+#         else:
+#             st.error(f"❌ Insert failed. Response: {insert_response}")
+#     except Exception as e:
+#         st.error(f"❌ Error inserting data: {e}")
+
+# b.email
 import streamlit as st
 from supabase import create_client
 import uuid
@@ -456,6 +540,7 @@ with st.form("business_form"):
 
     st.subheader("🏢 Business Information")
     business_name = st.text_input("Business Name")
+    business_email = st.text_input("Business Email")
     business_description = st.text_area("Business Description")
     business_logo = st.file_uploader("Upload a Business Logo/Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
     facebook_url = st.text_input("Facebook URL (optional)")
@@ -491,6 +576,7 @@ if submitted:
         "university": university,
         "profile_pic": profile_url,
         "business_name": business_name,
+        "business_email": business_email,
         "business_description": business_description,
         "business_logo": logo_url,
         "facebook_url": facebook_url,
@@ -506,6 +592,7 @@ if submitted:
             st.write("**Owner Name:**", owner_name or "Not provided")
             st.write("**University:**", university or "Not provided")
             st.write("**Business Name:**", business_name or "Not provided")
+            st.write("**Business Email:**", business_email or "Not provided")
             st.write("**Business Description:**", business_description or "Not provided")
             if profile_url:
                 st.image(profile_url, caption="Uploaded Profile Picture", use_container_width=True)
@@ -515,3 +602,4 @@ if submitted:
             st.error(f"❌ Insert failed. Response: {insert_response}")
     except Exception as e:
         st.error(f"❌ Error inserting data: {e}")
+
