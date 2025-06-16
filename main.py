@@ -857,9 +857,193 @@
 #     except Exception as e:
 #         st.error(f"⚠️ Failed to fetch data: {e}")
 
+
+
 # smrtwb integration
+# import streamlit as st
+# from supabase import create_client
+# import uuid
+#
+# # Supabase credentials
+# SUPABASE_URL = st.secrets["supabase"]["url"]
+# SUPABASE_KEY = st.secrets["supabase"]["key"]
+# BUCKET_NAME = st.secrets["supabase"]["bucket"]
+#
+# # Initialize supabase client
+# supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+#
+# # Sidebar navigation
+# view = st.sidebar.selectbox("🔍 Navigate", ["📋 Submit Business", "👥 View Profiles", "🕸️ SmrtWb"])
+#
+# # ========== UPLOAD HELPER FUNCTION ==========
+# def upload_to_supabase(file, folder):
+#     try:
+#         file_extension = file.name.split(".")[-1]
+#         unique_filename = f"{uuid.uuid4()}.{file_extension}"
+#         storage_path = f"{folder}/{unique_filename}"
+#         file_bytes = file.read()
+#
+#         supabase.storage.from_(BUCKET_NAME).upload(
+#             path=storage_path,
+#             file=file_bytes,
+#             file_options={"content-type": file.type},
+#         )
+#         return supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+#     except Exception as e:
+#         st.error(f"⚠️ Error uploading image: {e}")
+#         return None
+#
+# # ========== SUBMIT FORM ==========
+# if view == "📋 Submit Business":
+#     st.title("📋 Student Business Owner Submission Form")
+#
+#     with st.form("business_form"):
+#         st.subheader("👤 Owner Information")
+#         owner_name = st.text_input("Your Name")
+#         owner_email = st.text_input("Your Email")
+#         university = st.text_input("University")
+#         profile_pic = st.file_uploader("Upload a Profile Picture (JPG/PNG)", type=["jpg", "jpeg", "png"])
+#
+#         st.subheader("🏢 Business Information")
+#         business_name = st.text_input("Business Name")
+#         business_email = st.text_input("Business Email")
+#         business_description = st.text_area("Business Description")
+#         business_logo = st.file_uploader("Upload a Business Logo/Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
+#         facebook_url = st.text_input("Facebook URL (optional)")
+#         instagram_url = st.text_input("Instagram URL (optional)")
+#         website_url = st.text_input("Website URL (optional)")
+#
+#         submitted = st.form_submit_button("🚀 Submit")
+#
+#     if submitted:
+#         profile_url = upload_to_supabase(profile_pic, "owner_profiles") if profile_pic else None
+#         logo_url = upload_to_supabase(business_logo, "business_logos") if business_logo else None
+#
+#         owner_data = {
+#             "owner_name": owner_name,
+#             "owner_email": owner_email,
+#             "university": university,
+#             "profile_pic": profile_url,
+#         }
+#
+#         try:
+#             owner_insert = supabase.table("owner_table").insert(owner_data).execute()
+#
+#             if owner_insert.data and len(owner_insert.data) > 0:
+#                 owner_id = owner_insert.data[0]["id"]
+#
+#                 business_data = {
+#                     "owner_id": owner_id,
+#                     "business_name": business_name,
+#                     "business_email": business_email,
+#                     "business_description": business_description,
+#                     "business_logo": logo_url,
+#                     "facebook_url": facebook_url,
+#                     "instagram_url": instagram_url,
+#                     "website_url": website_url,
+#                 }
+#
+#                 business_insert = supabase.table("business_table").insert(business_data).execute()
+#
+#                 if business_insert.data and len(business_insert.data) > 0:
+#                     st.success("✅ Owner and Business info submitted successfully!")
+#                     st.write("### Submitted Info:")
+#                     st.write("**Owner Name:**", owner_name)
+#                     st.write("**University:**", university)
+#                     st.write("**Business Name:**", business_name)
+#                     st.write("**Business Email:**", business_email)
+#                     if profile_url:
+#                         st.image(profile_url, caption="Owner Profile Picture", use_container_width=True)
+#                     if logo_url:
+#                         st.image(logo_url, caption="Business Logo", use_container_width=True)
+#                 else:
+#                     st.error(f"❌ Failed to insert business info. Response: {business_insert}")
+#             else:
+#                 st.error("❌ Failed to insert owner info.")
+#         except Exception as e:
+#             st.error(f"❌ Error inserting data: {e}")
+#
+# # ========== VIEW PROFILES ==========
+# elif view == "👥 View Profiles":
+#     st.title("👥 Submitted Student Businesses")
+#
+#     try:
+#         # Get owners and businesses
+#         owner_data = supabase.table("owner_table").select("*").execute()
+#         business_data = supabase.table("business_table").select("*").execute()
+#
+#         owners = {o["id"]: o for o in owner_data.data} if owner_data.data else {}
+#         businesses = business_data.data or []
+#
+#         if not businesses:
+#             st.info("No businesses submitted yet.")
+#         else:
+#             for biz in businesses:
+#                 owner = owners.get(biz["owner_id"], {})
+#                 with st.container():
+#                     st.subheader(biz["business_name"])
+#                     col1, col2 = st.columns([1, 2])
+#                     with col1:
+#                         if biz["business_logo"]:
+#                             st.image(biz["business_logo"], caption="Business Logo", width=150)
+#                     with col2:
+#                         st.markdown(f"**Description:** {biz.get('business_description', 'N/A')}")
+#                         st.markdown(f"📧 **Email:** {biz.get('business_email', 'N/A')}")
+#                         if biz["facebook_url"]:
+#                             st.markdown(f"[🌐 Facebook]({biz['facebook_url']})")
+#                         if biz["instagram_url"]:
+#                             st.markdown(f"[📸 Instagram]({biz['instagram_url']})")
+#                         if biz["website_url"]:
+#                             st.markdown(f"[🔗 Website]({biz['website_url']})")
+#
+#                     with st.expander("👤 Owner Info"):
+#                         st.markdown(f"**Owner Name:** {owner.get('owner_name', 'N/A')}")
+#                         st.markdown(f"**University:** {owner.get('university', 'N/A')}")
+#                         st.markdown(f"**Email:** {owner.get('owner_email', 'N/A')}")
+#                         if owner.get("profile_pic"):
+#                             st.image(owner["profile_pic"], caption="Owner Profile", width=150)
+#
+#                     st.markdown("---")
+#     except Exception as e:
+#         st.error(f"⚠️ Failed to fetch data: {e}")
+#
+# # ========== SMRTWB TAB ==========
+# # ========== SMRTWB TAB ==========
+# elif view == "🕸️ SmrtWb":
+#     st.title("🕸️ Create Your SmrtWb")
+#     st.subheader("📁 CSV Format for Product Upload")
+#
+#     st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
+#
+#     st.markdown("""
+#     <style>
+#     .csv-format-box {
+#         background-color: #1e1e1e;
+#         color: #f1f1f1;
+#         border: 1px solid #444;
+#         border-radius: 8px;
+#         padding: 12px;
+#         font-family: monospace;
+#         font-size: 16px;
+#         overflow-x: auto;
+#         margin-bottom: 10px;
+#     }
+#     </style>
+#
+#     <div class="csv-format-box">
+#         product name,&nbsp;&nbsp;price,&nbsp;&nbsp;quantity,&nbsp;&nbsp;product picture url,&nbsp;&nbsp;description
+#     </div>
+#     """, unsafe_allow_html=True)
+#
+#     st.info("Make sure all column names are in lowercase and contain spaces (no underscores). Images must be publicly accessible URLs (or uploaded separately).")
+#
+#     st.markdown("You will soon be able to upload this CSV and auto-generate your store front!")
+
+
+# smrtwb integration csv
 import streamlit as st
 from supabase import create_client
+import pandas as pd
 import uuid
 
 # Supabase credentials
@@ -867,7 +1051,7 @@ SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
 BUCKET_NAME = st.secrets["supabase"]["bucket"]
 
-# Initialize supabase client
+# Initialize Supabase client
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Sidebar navigation
@@ -966,7 +1150,6 @@ elif view == "👥 View Profiles":
     st.title("👥 Submitted Student Businesses")
 
     try:
-        # Get owners and businesses
         owner_data = supabase.table("owner_table").select("*").execute()
         business_data = supabase.table("business_table").select("*").execute()
 
@@ -1006,13 +1189,11 @@ elif view == "👥 View Profiles":
         st.error(f"⚠️ Failed to fetch data: {e}")
 
 # ========== SMRTWB TAB ==========
-# ========== SMRTWB TAB ==========
 elif view == "🕸️ SmrtWb":
     st.title("🕸️ Create Your SmrtWb")
     st.subheader("📁 CSV Format for Product Upload")
 
     st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
-
     st.markdown("""
     <style>
     .csv-format-box {
@@ -1035,4 +1216,44 @@ elif view == "🕸️ SmrtWb":
 
     st.info("Make sure all column names are in lowercase and contain spaces (no underscores). Images must be publicly accessible URLs (or uploaded separately).")
 
-    st.markdown("You will soon be able to upload this CSV and auto-generate your store front!")
+    csv_file = st.file_uploader("📄 Upload your Product CSV", type=["csv"])
+
+    if csv_file:
+        try:
+            df = pd.read_csv(csv_file)
+            required_cols = ["product name", "price", "quantity", "product picture url", "description"]
+
+            if not all(col in df.columns for col in required_cols):
+                st.error("❌ CSV is missing required columns.")
+            else:
+                st.success("✅ CSV looks good. Displaying product list below:")
+
+                for i, row in df.iterrows():
+                    product_data = {
+                        "name": row["product name"],
+                        "price": float(row["price"]),
+                        "quantity": int(row["quantity"]),
+                        "image_url": row["product picture url"],
+                        "description": row["description"],
+                    }
+
+                    # Insert into Supabase
+                    try:
+                        supabase.table("products").insert(product_data).execute()
+                    except Exception as e:
+                        st.error(f"❌ Failed to insert row {i+1}: {e}")
+                        continue
+
+                    with st.container():
+                        st.subheader(product_data["name"])
+                        col1, col2 = st.columns([1, 2])
+                        with col1:
+                            st.image(product_data["image_url"], width=150)
+                        with col2:
+                            st.markdown(f"💵 **Price:** ${product_data['price']}")
+                            st.markdown(f"📦 **Quantity:** {product_data['quantity']}")
+                            st.markdown(f"📝 **Description:** {product_data['description']}")
+                        st.markdown("---")
+        except Exception as e:
+            st.error(f"❌ Failed to read CSV: {e}")
+
