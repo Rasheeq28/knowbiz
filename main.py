@@ -1240,21 +1240,26 @@ elif view == "🕸️ SmrtWb":
                     df = df.where(pd.notnull(df), None)  # Replace NaN with None
 
                     for i, row in df.iterrows():
-                        product_data = {
-                            "name": row["product name"],
-                            "price": float(row["price"]) if row["price"] is not None else 0.0,
-                            "quantity": int(row["quantity"]) if row["quantity"] is not None else 0,
-                            "image_url": row["product picture url"] or "",
-                            "description": row["description"] or "",
-                        }
-
                         try:
-                            supabase.table("products").insert(product_data).execute()
-                        except Exception as e:
-                            st.error(f"❌ Error inserting row {i+1}: {e}")
-                            continue
+                            name = str(row["product name"]) if pd.notna(row["product name"]) else ""
+                            price = float(row["price"]) if pd.notna(row["price"]) else 0.0
+                            quantity = int(row["quantity"]) if pd.notna(row["quantity"]) else 0
+                            image_url = str(row["product picture url"]) if pd.notna(row["product picture url"]) else ""
+                            description = str(row["description"]) if pd.notna(row["description"]) else ""
 
-                    st.success("✅ All products uploaded successfully!")
+                            product_data = {
+                                "name": name,
+                                "price": price,
+                                "quantity": quantity,
+                                "image_url": image_url,
+                                "description": description,
+                            }
+
+                            supabase.table("products").insert(product_data).execute()
+
+                        except Exception as e:
+                            st.error(f"❌ Error inserting row {i + 1}: {e}")
+
 
         except Exception as e:
             st.error(f"❌ Failed to read CSV: {e}")
