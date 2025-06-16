@@ -1097,6 +1097,11 @@ if view == "📋 Submit Business":
         instagram_url = st.text_input("Instagram URL (optional)")
         website_url = st.text_input("Website URL (optional)")
 
+        st.subheader("🕸️ Upload Products CSV (Optional)")
+        st.markdown("**CSV format must contain the following columns:**")
+        st.code("product name, price, quantity, product picture url, description", language="text")
+        product_csv = st.file_uploader("📤 Upload Product CSV", type=["csv"])
+
         submitted = st.form_submit_button("🚀 Submit")
 
     if submitted:
@@ -1112,8 +1117,7 @@ if view == "📋 Submit Business":
 
         try:
             owner_insert = supabase.table("owner_table").insert(owner_data).execute()
-
-            if owner_insert.data and len(owner_insert.data) > 0:
+            if owner_insert.data:
                 owner_id = owner_insert.data[0]["id"]
 
                 business_data = {
@@ -1129,23 +1133,46 @@ if view == "📋 Submit Business":
 
                 business_insert = supabase.table("business_table").insert(business_data).execute()
 
-                if business_insert.data and len(business_insert.data) > 0:
-                    st.success("✅ Owner and Business info submitted successfully!")
-                    st.write("### Submitted Info:")
-                    st.write("**Owner Name:**", owner_name)
-                    st.write("**University:**", university)
-                    st.write("**Business Name:**", business_name)
-                    st.write("**Business Email:**", business_email)
-                    if profile_url:
-                        st.image(profile_url, caption="Owner Profile Picture", use_container_width=True)
-                    if logo_url:
-                        st.image(logo_url, caption="Business Logo", use_container_width=True)
+                if business_insert.data:
+                    business_id = business_insert.data[0]["id"]
+
+                    st.success("✅ Business info submitted!")
+
+                    # ===== Handle CSV Product Upload =====
+                    if product_csv:
+                        try:
+                            df = pd.read_csv(product_csv)
+                            required_columns = ["product name", "price", "quantity", "product picture url", "description"]
+                            if not all(col in df.columns for col in required_columns):
+                                st.error("❌ CSV missing required columns.")
+                            else:
+                                df = df.where(pd.notnull(df), None)
+
+                                for i, row in df.iterrows():
+                                    try:
+                                        product_data = {
+                                            "business_id": business_id,
+                                            "name": str(row["product name"]) or "",
+                                            "price": float(row["price"]) if row["price"] is not None else 0.0,
+                                            "quantity": int(row["quantity"]) if row["quantity"] is not None else 0,
+                                            "image_url": str(row["product picture url"]) or "",
+                                            "description": str(row["description"]) or "",
+                                        }
+                                        supabase.table("products").insert(product_data).execute()
+                                    except Exception as e:
+                                        st.error(f"❌ Product Row {i+1} Error: {e}")
+                                st.success("✅ Products uploaded successfully.")
+                        except Exception as e:
+                            st.error(f"❌ Failed to read CSV: {e}")
+
+                    st.balloons()
                 else:
-                    st.error(f"❌ Failed to insert business info. Response: {business_insert}")
+                    st.error("❌ Failed to insert business.")
             else:
-                st.error("❌ Failed to insert owner info.")
+                st.error("❌ Failed to insert owner.")
         except Exception as e:
-            st.error(f"❌ Error inserting data: {e}")
+            st.error(f"❌ Error submitting: {e}")
+
 
 
 # ========== VIEW PROFILES ========== #
@@ -1191,75 +1218,75 @@ elif view == "👥 View Profiles":
     except Exception as e:
         st.error(f"⚠️ Failed to fetch data: {e}")
 
-
-# ========== SMRTWB TAB ========== #
-elif view == "🕸️ SmrtWb":
-    st.title("🕸️ Create Your SmrtWb")
-    st.subheader("📁 CSV Format for Product Upload")
-
-    st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
-
-    st.markdown("""
-    <style>
-    .csv-format-box {
-        background-color: #1e1e1e;
-        color: #f1f1f1;
-        border: 1px solid #444;
-        border-radius: 8px;
-        padding: 12px;
-        font-family: monospace;
-        font-size: 16px;
-        overflow-x: auto;
-        margin-bottom: 10px;
-    }
-    </style>
-
-    <div class="csv-format-box">
-        product name,&nbsp;&nbsp;price,&nbsp;&nbsp;quantity,&nbsp;&nbsp;product picture url,&nbsp;&nbsp;description
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.info("Make sure all column names are in lowercase and contain spaces (no underscores).")
-
-    csv_file = st.file_uploader("📤 Upload your CSV file here", type=["csv"])
-
-    if csv_file:
-        try:
-            df = pd.read_csv(csv_file)
-
-            required_columns = ["product name", "price", "quantity", "product picture url", "description"]
-            if not all(col in df.columns for col in required_columns):
-                st.error("❌ Your CSV is missing one or more required columns.")
-            else:
-                st.success("✅ CSV file loaded successfully!")
-                st.dataframe(df)
-
-                upload_button = st.button("📦 Upload Products to Supabase")
-
-                if upload_button:
-                    df = df.where(pd.notnull(df), None)  # Replace NaN with None
-
-                    for i, row in df.iterrows():
-                        try:
-                            name = str(row["product name"]) if pd.notna(row["product name"]) else ""
-                            price = float(row["price"]) if pd.notna(row["price"]) else 0.0
-                            quantity = int(row["quantity"]) if pd.notna(row["quantity"]) else 0
-                            image_url = str(row["product picture url"]) if pd.notna(row["product picture url"]) else ""
-                            description = str(row["description"]) if pd.notna(row["description"]) else ""
-
-                            product_data = {
-                                "name": name,
-                                "price": price,
-                                "quantity": quantity,
-                                "image_url": image_url,
-                                "description": description,
-                            }
-
-                            supabase.table("products").insert(product_data).execute()
-
-                        except Exception as e:
-                            st.error(f"❌ Error inserting row {i + 1}: {e}")
-
-
-        except Exception as e:
-            st.error(f"❌ Failed to read CSV: {e}")
+#
+# # ========== SMRTWB TAB ========== #
+# elif view == "🕸️ SmrtWb":
+#     st.title("🕸️ Create Your SmrtWb")
+#     st.subheader("📁 CSV Format for Product Upload")
+#
+#     st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
+#
+#     st.markdown("""
+#     <style>
+#     .csv-format-box {
+#         background-color: #1e1e1e;
+#         color: #f1f1f1;
+#         border: 1px solid #444;
+#         border-radius: 8px;
+#         padding: 12px;
+#         font-family: monospace;
+#         font-size: 16px;
+#         overflow-x: auto;
+#         margin-bottom: 10px;
+#     }
+#     </style>
+#
+#     <div class="csv-format-box">
+#         product name,&nbsp;&nbsp;price,&nbsp;&nbsp;quantity,&nbsp;&nbsp;product picture url,&nbsp;&nbsp;description
+#     </div>
+#     """, unsafe_allow_html=True)
+#
+#     st.info("Make sure all column names are in lowercase and contain spaces (no underscores).")
+#
+#     csv_file = st.file_uploader("📤 Upload your CSV file here", type=["csv"])
+#
+#     if csv_file:
+#         try:
+#             df = pd.read_csv(csv_file)
+#
+#             required_columns = ["product name", "price", "quantity", "product picture url", "description"]
+#             if not all(col in df.columns for col in required_columns):
+#                 st.error("❌ Your CSV is missing one or more required columns.")
+#             else:
+#                 st.success("✅ CSV file loaded successfully!")
+#                 st.dataframe(df)
+#
+#                 upload_button = st.button("📦 Upload Products to Supabase")
+#
+#                 if upload_button:
+#                     df = df.where(pd.notnull(df), None)  # Replace NaN with None
+#
+#                     for i, row in df.iterrows():
+#                         try:
+#                             name = str(row["product name"]) if pd.notna(row["product name"]) else ""
+#                             price = float(row["price"]) if pd.notna(row["price"]) else 0.0
+#                             quantity = int(row["quantity"]) if pd.notna(row["quantity"]) else 0
+#                             image_url = str(row["product picture url"]) if pd.notna(row["product picture url"]) else ""
+#                             description = str(row["description"]) if pd.notna(row["description"]) else ""
+#
+#                             product_data = {
+#                                 "name": name,
+#                                 "price": price,
+#                                 "quantity": quantity,
+#                                 "image_url": image_url,
+#                                 "description": description,
+#                             }
+#
+#                             supabase.table("products").insert(product_data).execute()
+#
+#                         except Exception as e:
+#                             st.error(f"❌ Error inserting row {i + 1}: {e}")
+#
+#
+#         except Exception as e:
+#             st.error(f"❌ Failed to read CSV: {e}")
