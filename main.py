@@ -1006,6 +1006,7 @@ elif view == "👥 View Profiles":
         st.error(f"⚠️ Failed to fetch data: {e}")
 
 # ========== SMRTWB TAB ==========
+# ========== SMRTWB TAB ==========
 elif view == "🕸️ SmrtWb":
     st.title("🕸️ Create Your SmrtWb")
     st.subheader("📁 CSV Format for Product Upload")
@@ -1013,12 +1014,22 @@ elif view == "🕸️ SmrtWb":
     st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
 
     st.markdown("""
-    <div style="border: 1px solid #ccc; border-radius: 6px; padding: 12px; background-color: #f9f9f9; font-family: monospace;">
-        <strong>product name</strong> &nbsp;&nbsp;&nbsp; 
-        <strong>price</strong> &nbsp;&nbsp;&nbsp; 
-        <strong>quantity</strong> &nbsp;&nbsp;&nbsp; 
-        <strong>product picture url</strong> &nbsp;&nbsp;&nbsp; 
-        <strong>description</strong>
+    <style>
+    .csv-format-box {
+        background-color: #1e1e1e;
+        color: #f1f1f1;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 12px;
+        font-family: monospace;
+        font-size: 16px;
+        overflow-x: auto;
+        margin-bottom: 10px;
+    }
+    </style>
+
+    <div class="csv-format-box">
+        product name,&nbsp;&nbsp;price,&nbsp;&nbsp;quantity,&nbsp;&nbsp;product picture url,&nbsp;&nbsp;description
     </div>
     """, unsafe_allow_html=True)
 
