@@ -1038,12 +1038,11 @@
 #     st.info("Make sure all column names are in lowercase and contain spaces (no underscores). Images must be publicly accessible URLs (or uploaded separately).")
 #
 #     st.markdown("You will soon be able to upload this CSV and auto-generate your store front!")
-
+#
 
 # smrtwb integration csv
 import streamlit as st
 from supabase import create_client
-import pandas as pd
 import uuid
 
 # Supabase credentials
@@ -1051,7 +1050,7 @@ SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
 BUCKET_NAME = st.secrets["supabase"]["bucket"]
 
-# Initialize Supabase client
+# Initialize supabase client
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Sidebar navigation
@@ -1150,6 +1149,7 @@ elif view == "👥 View Profiles":
     st.title("👥 Submitted Student Businesses")
 
     try:
+        # Get owners and businesses
         owner_data = supabase.table("owner_table").select("*").execute()
         business_data = supabase.table("business_table").select("*").execute()
 
@@ -1194,6 +1194,7 @@ elif view == "🕸️ SmrtWb":
     st.subheader("📁 CSV Format for Product Upload")
 
     st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
+
     st.markdown("""
     <style>
     .csv-format-box {
@@ -1216,44 +1217,52 @@ elif view == "🕸️ SmrtWb":
 
     st.info("Make sure all column names are in lowercase and contain spaces (no underscores). Images must be publicly accessible URLs (or uploaded separately).")
 
+    # File uploader and trigger
     csv_file = st.file_uploader("📄 Upload your Product CSV", type=["csv"])
+    upload_button = st.button("📤 Upload Products")
 
-    if csv_file:
-        try:
-            df = pd.read_csv(csv_file)
-            required_cols = ["product name", "price", "quantity", "product picture url", "description"]
+    if upload_button:
+        if not csv_file:
+            st.warning("⚠️ Please upload a CSV file before clicking 'Upload Products'.")
+        else:
+            try:
+                import pandas as pd
 
-            if not all(col in df.columns for col in required_cols):
-                st.error("❌ CSV is missing required columns.")
-            else:
-                st.success("✅ CSV looks good. Displaying product list below:")
+                df = pd.read_csv(csv_file)
+                expected_columns = ["product name", "price", "quantity", "product picture url", "description"]
 
-                for i, row in df.iterrows():
-                    product_data = {
-                        "name": row["product name"],
-                        "price": float(row["price"]),
-                        "quantity": int(row["quantity"]),
-                        "image_url": row["product picture url"],
-                        "description": row["description"],
-                    }
+                if not all(col in df.columns for col in expected_columns):
+                    st.error("❌ CSV is missing one or more required columns.")
+                else:
+                    st.success("✅ CSV looks good. Uploading products...")
 
-                    # Insert into Supabase
-                    try:
-                        supabase.table("products").insert(product_data).execute()
-                    except Exception as e:
-                        st.error(f"❌ Failed to insert row {i+1}: {e}")
-                        continue
+                    for i, row in df.iterrows():
+                        product_data = {
+                            "name": row["product name"],
+                            "price": float(row["price"]),
+                            "quantity": int(row["quantity"]),
+                            "image_url": row["product picture url"],
+                            "description": row["description"]
+                        }
 
-                    with st.container():
-                        st.subheader(product_data["name"])
-                        col1, col2 = st.columns([1, 2])
-                        with col1:
-                            st.image(product_data["image_url"], width=150)
-                        with col2:
-                            st.markdown(f"💵 **Price:** ${product_data['price']}")
-                            st.markdown(f"📦 **Quantity:** {product_data['quantity']}")
-                            st.markdown(f"📝 **Description:** {product_data['description']}")
-                        st.markdown("---")
-        except Exception as e:
-            st.error(f"❌ Failed to read CSV: {e}")
+                        try:
+                            supabase.table("products").insert(product_data).execute()
+                        except Exception as e:
+                            st.error(f"❌ Error inserting row {i+1}: {e}")
+                            continue
+
+                        # Optional: Show preview of uploaded product
+                        with st.container():
+                            st.subheader(product_data["name"])
+                            col1, col2 = st.columns([1, 2])
+                            with col1:
+                                st.image(product_data["image_url"], width=150)
+                            with col2:
+                                st.markdown(f"💵 **Price:** ${product_data['price']}")
+                                st.markdown(f"📦 **Quantity:** {product_data['quantity']}")
+                                st.markdown(f"📝 **Description:** {product_data['description']}")
+                            st.markdown("---")
+            except Exception as e:
+                st.error(f"❌ Failed to process CSV: {e}")
+
 
