@@ -1055,7 +1055,7 @@ BUCKET_NAME = st.secrets["supabase"]["bucket"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Sidebar navigation
-view = st.sidebar.selectbox("🔍 Navigate", ["📋 Submit Business", "👥 View Profiles", "🕸️ SmrtWb"])
+view = st.sidebar.selectbox("🔍 Navigate", ["📋 Submit Business", "👥 View Profiles",])
 
 
 # ========== UPLOAD HELPER FUNCTION ========== #
@@ -1217,76 +1217,3 @@ elif view == "👥 View Profiles":
                     st.markdown("---")
     except Exception as e:
         st.error(f"⚠️ Failed to fetch data: {e}")
-
-#
-# # ========== SMRTWB TAB ========== #
-# elif view == "🕸️ SmrtWb":
-#     st.title("🕸️ Create Your SmrtWb")
-#     st.subheader("📁 CSV Format for Product Upload")
-#
-#     st.markdown("To create your smart website, upload a CSV file with the following **exact column headers**:")
-#
-#     st.markdown("""
-#     <style>
-#     .csv-format-box {
-#         background-color: #1e1e1e;
-#         color: #f1f1f1;
-#         border: 1px solid #444;
-#         border-radius: 8px;
-#         padding: 12px;
-#         font-family: monospace;
-#         font-size: 16px;
-#         overflow-x: auto;
-#         margin-bottom: 10px;
-#     }
-#     </style>
-#
-#     <div class="csv-format-box">
-#         product name,&nbsp;&nbsp;price,&nbsp;&nbsp;quantity,&nbsp;&nbsp;product picture url,&nbsp;&nbsp;description
-#     </div>
-#     """, unsafe_allow_html=True)
-#
-#     st.info("Make sure all column names are in lowercase and contain spaces (no underscores).")
-#
-#     csv_file = st.file_uploader("📤 Upload your CSV file here", type=["csv"])
-#
-#     if csv_file:
-#         try:
-#             df = pd.read_csv(csv_file)
-#
-#             required_columns = ["product name", "price", "quantity", "product picture url", "description"]
-#             if not all(col in df.columns for col in required_columns):
-#                 st.error("❌ Your CSV is missing one or more required columns.")
-#             else:
-#                 st.success("✅ CSV file loaded successfully!")
-#                 st.dataframe(df)
-#
-#                 upload_button = st.button("📦 Upload Products to Supabase")
-#
-#                 if upload_button:
-#                     df = df.where(pd.notnull(df), None)  # Replace NaN with None
-#
-#                     for i, row in df.iterrows():
-#                         try:
-#                             name = str(row["product name"]) if pd.notna(row["product name"]) else ""
-#                             price = float(row["price"]) if pd.notna(row["price"]) else 0.0
-#                             quantity = int(row["quantity"]) if pd.notna(row["quantity"]) else 0
-#                             image_url = str(row["product picture url"]) if pd.notna(row["product picture url"]) else ""
-#                             description = str(row["description"]) if pd.notna(row["description"]) else ""
-#
-#                             product_data = {
-#                                 "name": name,
-#                                 "price": price,
-#                                 "quantity": quantity,
-#                                 "image_url": image_url,
-#                                 "description": description,
-#                             }
-#
-#                             supabase.table("products").insert(product_data).execute()
-#
-#                         except Exception as e:
-#                             st.error(f"❌ Error inserting row {i + 1}: {e}")
-#
-#
-#         except Exception as e:
-#             st.error(f"❌ Failed to read CSV: {e}")
