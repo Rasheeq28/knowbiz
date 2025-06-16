@@ -1043,6 +1043,7 @@
 # smrtwb integration csv
 import streamlit as st
 from supabase import create_client
+import pandas as pd
 import uuid
 
 # Supabase credentials
@@ -1056,7 +1057,8 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Sidebar navigation
 view = st.sidebar.selectbox("🔍 Navigate", ["📋 Submit Business", "👥 View Profiles", "🕸️ SmrtWb"])
 
-# ========== UPLOAD HELPER FUNCTION ==========
+
+# ========== UPLOAD HELPER FUNCTION ========== #
 def upload_to_supabase(file, folder):
     try:
         file_extension = file.name.split(".")[-1]
@@ -1074,7 +1076,8 @@ def upload_to_supabase(file, folder):
         st.error(f"⚠️ Error uploading image: {e}")
         return None
 
-# ========== SUBMIT FORM ==========
+
+# ========== SUBMIT FORM ========== #
 if view == "📋 Submit Business":
     st.title("📋 Student Business Owner Submission Form")
 
@@ -1144,12 +1147,12 @@ if view == "📋 Submit Business":
         except Exception as e:
             st.error(f"❌ Error inserting data: {e}")
 
-# ========== VIEW PROFILES ==========
+
+# ========== VIEW PROFILES ========== #
 elif view == "👥 View Profiles":
     st.title("👥 Submitted Student Businesses")
 
     try:
-        # Get owners and businesses
         owner_data = supabase.table("owner_table").select("*").execute()
         business_data = supabase.table("business_table").select("*").execute()
 
@@ -1188,7 +1191,8 @@ elif view == "👥 View Profiles":
     except Exception as e:
         st.error(f"⚠️ Failed to fetch data: {e}")
 
-# ========== SMRTWB TAB ==========
+
+# ========== SMRTWB TAB ========== #
 elif view == "🕸️ SmrtWb":
     st.title("🕸️ Create Your SmrtWb")
     st.subheader("📁 CSV Format for Product Upload")
@@ -1215,34 +1219,33 @@ elif view == "🕸️ SmrtWb":
     </div>
     """, unsafe_allow_html=True)
 
-    st.info("Make sure all column names are in lowercase and contain spaces (no underscores). Images must be publicly accessible URLs (or uploaded separately).")
+    st.info("Make sure all column names are in lowercase and contain spaces (no underscores).")
 
-    # File uploader and trigger
-    csv_file = st.file_uploader("📄 Upload your Product CSV", type=["csv"])
-    upload_button = st.button("📤 Upload Products")
+    csv_file = st.file_uploader("📤 Upload your CSV file here", type=["csv"])
 
-    if upload_button:
-        if not csv_file:
-            st.warning("⚠️ Please upload a CSV file before clicking 'Upload Products'.")
-        else:
-            try:
-                import pandas as pd
+    if csv_file:
+        try:
+            df = pd.read_csv(csv_file)
 
-                df = pd.read_csv(csv_file)
-                expected_columns = ["product name", "price", "quantity", "product picture url", "description"]
+            required_columns = ["product name", "price", "quantity", "product picture url", "description"]
+            if not all(col in df.columns for col in required_columns):
+                st.error("❌ Your CSV is missing one or more required columns.")
+            else:
+                st.success("✅ CSV file loaded successfully!")
+                st.dataframe(df)
 
-                if not all(col in df.columns for col in expected_columns):
-                    st.error("❌ CSV is missing one or more required columns.")
-                else:
-                    st.success("✅ CSV looks good. Uploading products...")
+                upload_button = st.button("📦 Upload Products to Supabase")
+
+                if upload_button:
+                    df = df.where(pd.notnull(df), None)  # Replace NaN with None
 
                     for i, row in df.iterrows():
                         product_data = {
                             "name": row["product name"],
-                            "price": float(row["price"]),
-                            "quantity": int(row["quantity"]),
-                            "image_url": row["product picture url"],
-                            "description": row["description"]
+                            "price": float(row["price"]) if row["price"] is not None else 0.0,
+                            "quantity": int(row["quantity"]) if row["quantity"] is not None else 0,
+                            "image_url": row["product picture url"] or "",
+                            "description": row["description"] or "",
                         }
 
                         try:
@@ -1251,18 +1254,7 @@ elif view == "🕸️ SmrtWb":
                             st.error(f"❌ Error inserting row {i+1}: {e}")
                             continue
 
-                        # Optional: Show preview of uploaded product
-                        with st.container():
-                            st.subheader(product_data["name"])
-                            col1, col2 = st.columns([1, 2])
-                            with col1:
-                                st.image(product_data["image_url"], width=150)
-                            with col2:
-                                st.markdown(f"💵 **Price:** ${product_data['price']}")
-                                st.markdown(f"📦 **Quantity:** {product_data['quantity']}")
-                                st.markdown(f"📝 **Description:** {product_data['description']}")
-                            st.markdown("---")
-            except Exception as e:
-                st.error(f"❌ Failed to process CSV: {e}")
+                    st.success("✅ All products uploaded successfully!")
 
-
+        except Exception as e:
+            st.error(f"❌ Failed to read CSV: {e}")
