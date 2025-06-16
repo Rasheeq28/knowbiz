@@ -722,7 +722,7 @@ BUCKET_NAME = st.secrets["supabase"]["bucket"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Sidebar navigation
-view = st.sidebar.selectbox("🔍 Navigate", ["📋 Submit Business", "👥 View Profiles"])
+view = st.sidebar.selectbox("🔍 Navigate", ["📋 Submit Business", "👥 View Profiles", "🕸️ SmrtWb"])
 
 # ========== UPLOAD HELPER FUNCTION ==========
 def upload_to_supabase(file, folder):
